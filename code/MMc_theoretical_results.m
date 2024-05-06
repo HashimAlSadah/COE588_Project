@@ -12,7 +12,7 @@ function [PMF, E_N, E_Nq, E_T, E_W] = MMc_theoretical_results(lambda, mu, c, j_m
         pj(j) = ( (a^(j)) / factorial(j) ) * p0;
     end 
     for j = c+1:j_max
-        pj(j) = ( a^(j-c) / factorial(c) ) * a^c * p0;
+        pj(j) = ( rho^(j-c) / factorial(c) ) * a^c * p0;
     end 
     PMF = [p0 pj];
     pc = PMF(c+1); 
