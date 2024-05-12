@@ -1,6 +1,6 @@
 clc;clearvars;
 numCustomers = 100000;
-lambda = 16;
+lambda = 10;
 mue = 10;
 c = 2;
 rho = lambda / (c * mue);
@@ -28,7 +28,7 @@ sim_E_T = sim_E_T + mean(TT);
 probWait = sum( WT > 0) / length(WT);
 
 %-------E[N], E[Nq]-------
-[areaN, areaNq] = PMF_and_track_N(AT, DT, c);
+[areaN, areaNq, NCustomer] = PMF_and_track_N(AT, DT, c);
 maxDT = max(DT);
 sim_E_N = + sim_E_N + areaN / maxDT;
 sim_E_Nq = sim_E_Nq + areaNq / maxDT;
@@ -43,17 +43,21 @@ sim_E_Nq = sim_E_Nq / n_trials;
 sim_rho = sim_rho / n_trials;
 
 %-------theoretical results------
-[theo_PMF, theo_E_N, theo_E_Nq, theo_E_T, theo_E_W] = ...
-    MMc_theoretical_results(lambda, mue, c, 30);
+[theo_PMF, theo_E_N, theo_E_Nq, theo_E_T, theo_E_W, pWaiting, pc, p0] = ...
+    MMc_theoretical_results(lambda, mue, c, 100);
 
 disp("----------Simulation Resutls-------")
 fprintf("E[N] = %f \n", sim_E_N);
 fprintf("E[Nq] = %f \n", sim_E_Nq);
 fprintf("E[T] = %f \n", sim_E_T);
 fprintf("E[W] = %f \n", sim_E_W);
+fprintf("Probability to Wait = %f \n", probWait);
 
 disp("----------Theoretical Resutls-------")
 fprintf("E[N] = %f \n", theo_E_N);
 fprintf("E[Nq] = %f \n", theo_E_Nq);
 fprintf("E[T] = %f \n", theo_E_T);
 fprintf("E[W] = %f \n", theo_E_W);
+fprintf("Probability to Wait = %f \n", pWaiting);
+
+Plots(lambda, mue, c, rho, numCustomers, TT, WT, theo_E_T, theo_E_W, pc, pWaiting, NCustomer, theo_E_N);

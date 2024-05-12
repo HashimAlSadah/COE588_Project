@@ -1,4 +1,4 @@
-function [PMF, E_N, E_Nq, E_T, E_W] = MMc_theoretical_results(lambda, mu, c, j_max)
+function [PMF, E_N, E_Nq, E_T, E_W, pWaiting, pc,p0] = MMc_theoretical_results(lambda, mu, c, j_max)
     a = lambda / mu; rho = a/c;
     p0 = 0;
     for i = 0:(c-1)
