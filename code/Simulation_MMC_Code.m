@@ -14,9 +14,7 @@ sim_rho = 0;
 for i = 1:n_trials 
 % Initialize lists
 AT = cumsum(exprnd((1/lambda)*ones(1,numCustomers)));
-ST = exprnd((1/mue)*ones(1,numCustomers));
-n_runs = 1;
-
+ST = exprnd((1/mue)*ones(1,numCustomers))
 
 
 %---------E[T], E[W]--------
@@ -60,4 +58,4 @@ fprintf("E[T] = %f \n", theo_E_T);
 fprintf("E[W] = %f \n", theo_E_W);
 fprintf("Probability to Wait = %f \n", pWaiting);
 
-Plots(lambda, mue, c, rho, numCustomers, TT, WT, theo_E_T, theo_E_W, pc, pWaiting, NCustomer, theo_E_N);
+Plots(lambda, mue, c, rho, numCustomers, TT, WT, theo_E_T, theo_E_W, pc, pWaiting, probWait, NCustomer, theo_E_N);
