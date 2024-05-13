@@ -1,10 +1,11 @@
 clc;clearvars;
 LineWidth = 2; MarkerSize = 8; FontSize1 = 14; FontSize2 = 12;
 numCustomers = 100000;
-rho = 0.05:0.05:0.95;
+rho = 0.05:0.05:0.99;
 mue = 10;
 lambda = rho * mue;
 c = 2;
+N_max = 100;
 
 for i=1:length(rho)
     sim_E_W(i) = 0;
@@ -25,14 +26,14 @@ for i=1:length(rho)
     probWait(i) = sum( WT > 0) / length(WT);
     
     %-------E[N], E[Nq]-------
-    [areaN, areaNq, NCustomer] = PMF_and_track_N(AT, DT, c);
+    [areaN, areaNq, simPMF] = PMF_and_track_N(AT, DT, c, N_max);
     maxDT = max(DT);
     sim_E_N(i) = + sim_E_N(i) + areaN / maxDT;
     sim_E_Nq(i) = sim_E_Nq(i) + areaNq / maxDT;
     
     %-------theoretical results------
     [theo_PMF, theo_E_N(i), theo_E_Nq(i), theo_E_T(i), theo_E_W(i), pWaiting(i), pc, p0] = ...
-        MMc_theoretical_results(lambda(i), mue, c, max(NCustomer));
+        MMc_theoretical_results(lambda(i), mue, c, N_max);
 end
 
 figure(1); clf;
