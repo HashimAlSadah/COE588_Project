@@ -43,6 +43,8 @@ xlabel('Traffic intensity Rho (Erlang)'); ylabel('E[T] (time)');
 set(gca,'FontSize', FontSize2);
 h = legend('theoritical ', 'simulation', 'Location','northwest');
 set(h, 'FontSize', FontSize2);
+exportgraphics(gcf, "figures/avgs_vs_traffic_intensity/E_T.png", ...
+    Resolution=300);
 
 figure(2); clf;
 plot(rho,theo_E_W, '--', 'LineWidth', LineWidth); grid on; hold on;
@@ -51,6 +53,8 @@ xlabel('Traffic intensity Rho (Erlang)'); ylabel('E[W] (time)');
 set(gca,'FontSize', FontSize2);
 h = legend('theoritical ', 'simulation', 'Location','northwest');
 set(h, 'FontSize', FontSize2);
+exportgraphics(gcf, "figures/avgs_vs_traffic_intensity/E_W.png", ...
+    Resolution=300);
 
 figure(3); clf;
 plot(rho,theo_E_N, '--', 'LineWidth', LineWidth); grid on; hold on;
@@ -59,6 +63,8 @@ xlabel('Traffic intensity Rho (Erlang)'); ylabel('E[N] (Customer)');
 set(gca,'FontSize', FontSize2);
 h = legend('theoritical ', 'simulation', 'Location','northwest');
 set(h, 'FontSize', FontSize2);
+exportgraphics(gcf, "figures/avgs_vs_traffic_intensity/E_N.png", ...
+    Resolution=300);
 
 figure(4); clf;
 plot(rho,theo_E_Nq, '--', 'LineWidth', LineWidth); grid on; hold on;
@@ -67,3 +73,5 @@ xlabel('Traffic intensity Rho (Erlang)'); ylabel('E[Nq] (Customer)');
 set(gca,'FontSize', FontSize2);
 h = legend('theoritical ', 'simulation', 'Location','northwest');
 set(h, 'FontSize', FontSize2);
+exportgraphics(gcf, "figures/avgs_vs_traffic_intensity/E_Nq.png", ...
+    Resolution=300);

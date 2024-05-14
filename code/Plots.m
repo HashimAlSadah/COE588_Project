@@ -2,6 +2,7 @@ function Plots(lambda, mue, c, rho, numCustomers, ...
     TT, WT, theo_E_T, theo_E_W, pc, ...
     pWaiting, probWait, N_max, theo_E_N, theo_PMF, simPMF)
 
+save = false;
 % plot the distribution of TotalTime
 MinTime = 0; MaxTime = max(TT); 
 NoOfBins = 50; BinWidth = (MaxTime-MinTime)/NoOfBins;
@@ -19,6 +20,12 @@ set(gca,'FontSize', 14);
 h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
  num2str(lambda/(c*mue))], 'Theoretical');
 set(h, 'FontSize', 12);
+if save
+    fileName = strcat("bars_plot_no_customers_", ...
+        num2str(numCustomers), "_rho_", num2str(rho));
+    exportgraphics(gcf, strcat("figures/total_time_dist/", ...
+        fileName, ".png"), Resolution=300)
+end
 
 %------semi lograthmic f_T(t)------
 figure(2);clf;
@@ -29,7 +36,12 @@ h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
  num2str(lambda/(c*mue))], 'Theoretical');
 set(h, 'FontSize', 12);
 grid on;
-
+if save 
+    fileName = strcat("semilogy_plot_no_customers_", ...
+        num2str(numCustomers), "_rho_", num2str(rho));
+    exportgraphics(gcf, strcat("figures/total_time_dist/", ...
+        fileName, ".png"), Resolution=300)
+end 
 
 % plot the distribution of waitTime
 WWT = nonzeros(WT)';
@@ -49,6 +61,12 @@ set(gca,'FontSize', 14);
 h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
  num2str(lambda/(c*mue))], 'Theoretical');
 set(h, 'FontSize', 12);
+if save
+    fileName = strcat("bar_plot_no_customers_", ...
+        num2str(numCustomers), "_rho_", num2str(rho));
+    exportgraphics(gcf, strcat("figures/waiting_time_dist/", ...
+        fileName, ".png"), Resolution=300)
+end
 
 %------semi logarithmic f_W(t)-----
 figure(4);clf;
@@ -59,7 +77,12 @@ h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
  num2str(lambda/(c*mue))], 'Theoretical');
 set(h, 'FontSize', 12);
 grid on;
-
+if save 
+    fileName = strcat("semilogy_plot_no_customers_", ...
+        num2str(numCustomers), "_rho_", num2str(rho));
+    exportgraphics(gcf, strcat("figures/waiting_time_dist/", ...
+        fileName, ".png"), Resolution=300)
+end
 
 %---------PMF of N-------
 fig_xlabel = "No of customers, k";
@@ -75,6 +98,12 @@ h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
  num2str(lambda/(c*mue))], 'Theoretical');
 set(h, 'FontSize', 12);
 grid on;
+if save
+    fileName = strcat("bar_plot_no_customers_", ...
+        num2str(numCustomers), "_rho_", num2str(rho));
+    exportgraphics(gcf, strcat("figures/N_PMF/", ...
+        fileName, ".png"), Resolution=300)
+end
 
 
 %-------bar plot------
@@ -89,5 +118,11 @@ h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
  num2str(lambda/(c*mue))], 'Theoretical');
 set(h, 'FontSize', 12);
 grid on;
+if save
+    fileName = strcat("semilogy_plot_no_customers_", ...
+        num2str(numCustomers), "_rho_", num2str(rho));
+    exportgraphics(gcf, strcat("figures/N_PMF/", ...
+        fileName, ".png"), Resolution=300)
+end
 end
 
