@@ -1,0 +1,427 @@
+\begin{lstlisting}[style=Matlab-editor, basicstyle=\ttfamily\footnotesize]
+    function [DT, startList, serviceTime] = simulation_loop(AT, ST, c)
+      numCustomers = length(AT);
+      startList = zeros(1, numCustomers);
+      DT = zeros(1, numCustomers);
+      serverList = zeros(1, c); % Initialize server list with c free servers
+      serverID = zeros(1, numCustomers);
+      serviceTime = zeros(1, c);
+      % Run simulation
+      for i = 1:numCustomers
+          % Find the earliest available server
+          [~, idx] = min(serverList);
+          earliestAvailableTime = serverList(idx);
+          serverID(i) = idx;
+          
+          % Calculate the start time for the customer
+          startTime = max(AT(i), earliestAvailableTime);
+          startList(i) = startTime;
+          
+          % Calculate the departure time
+          departureTime = startTime + ST(i);
+          DT(i) = departureTime;
+          
+          % Update the server list
+          serverList(idx) = departureTime;
+          serviceTime(idx) = serviceTime(idx) + ST(i); 
+      end
+  end
+  %---------------End od the function--------
+  \end{lstlisting}
+  
+  \begin{lstlisting}[style=Matlab-editor, basicstyle=\ttfamily\footnotesize]
+    %----------E[N], E[Nq], and PMF of N(t)-------------
+    function [areaN, areaNq, simPMF] = PMF_and_track_N(AT, DT, c, N_max)
+      N = 0; simPMF = zeros(1, N_max+1);
+      areaN = 0; areaNq = 0;
+      preEventTime = 0; clock = 0;
+      i = 1; j = 1;
+      sortedDT = sort(DT);
+      while clock < max(AT)
+          if AT(i) < sortedDT(j)
+              clock = AT(i);
+              timeInterval = clock - preEventTime;
+              simPMF(min(N, N_max)+1) = simPMF(min(N, N_max)+1) + timeInterval;
+              areaN = areaN + timeInterval * N;
+              areaNq = areaNq + timeInterval * max(0, N - c);
+              N = N + 1;
+              preEventTime = clock;
+              i = i + 1;
+          else
+              clock = sortedDT(j);
+              timeInterval = clock - preEventTime;
+              simPMF(min(N, N_max)+1) = simPMF(min(N, N_max)+1) + timeInterval;
+              areaN = areaN + timeInterval * N;
+              areaNq = areaNq + timeInterval * max(0, N - c);
+              N = N - 1;
+              preEventTime = clock;
+              j = j + 1;
+          end
+      end
+  
+      for j = j:1:length(sortedDT)
+          clock = sortedDT(j);
+          timeInterval = clock - preEventTime;
+          simPMF(min(N, N_max)+1) = simPMF(min(N, N_max)+1) + timeInterval;
+          areaN = areaN + timeInterval * N;
+          areaNq = areaNq + timeInterval * max(0, N - c);
+          N = N - 1;
+          preEventTime = clock;
+      end 
+      simPMF = simPMF/clock;
+  end
+  %---------------End od the function--------
+  \end{lstlisting}
+  
+  \begin{lstlisting}[style=Matlab-editor, basicstyle=\ttfamily\footnotesize]
+    %------------Theoretical results-------------
+    function [PMF, E_N, E_Nq, E_T, E_W, pWaiting, pc,p0] = MMc_theoretical_results(lambda, mu, c, j_max)
+      a = lambda / mu; rho = a/c;
+      p0 = 0;
+      for i = 0:(c-1)
+          p0 = p0 + a^i / factorial(i);
+      end 
+      p0 = p0 + ( a^c / factorial(c) ) * ( 1/(1-rho) );
+      p0 = 1/p0;
+      pj = zeros(1, j_max);
+      %compute the PMFs
+      for j = 1:c
+          pj(j) = ( (a^(j)) / factorial(j) ) * p0;
+      end 
+      for j = c+1:j_max
+          pj(j) = ( rho^(j-c) / factorial(c) ) * a^c * p0;
+      end 
+      PMF = [p0 pj];
+      pc = PMF(c+1); 
+      pWaiting = pc / (1-rho);
+      E_Nq = ( rho / (1-rho) ) * pWaiting;
+      E_W = E_Nq/lambda;
+      E_T = E_W + (1/mu);
+      E_N = E_Nq + a;
+  end
+  %---------------End od the function--------
+  \end{lstlisting}
+  
+  \begin{lstlisting}[style=Matlab-editor, basicstyle=\ttfamily\footnotesize]
+  %-------plot distributions--------
+  function Plots(lambda, mue, c, rho, numCustomers, ...
+  TT, WT, theo_E_T, theo_E_W, pc, ...
+  pWaiting, probWait, N_max, theo_E_N, theo_PMF, simPMF)
+  
+    save = false;
+    % plot the distribution of TotalTime
+    MinTime = 0; MaxTime = max(TT); 
+    NoOfBins = 50; BinWidth = (MaxTime-MinTime)/NoOfBins;
+    bins = MinTime+BinWidth/2:BinWidth:MaxTime-BinWidth/2;
+    freq = hist(TT, bins);
+    TT_EPDF = freq./sum(freq)./BinWidth;
+    TT_PDF = (1/(theo_E_T))*exp(-bins*(1/(theo_E_T)));
+    figure(1); clf;
+    bar(bins, TT_EPDF); 
+    grid on; hold on;
+    plot(bins, TT_PDF, '--or', 'LineWidth', 2);
+    hold off;
+    xlabel('total time, T'); ylabel('PDF f_T(t)');
+    set(gca,'FontSize', 14);
+    h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
+    num2str(lambda/(c*mue))], 'Theoretical');
+    set(h, 'FontSize', 12);
+    if save
+      fileName = strcat("bars_plot_no_customers_", ...
+          num2str(numCustomers), "_rho_", num2str(rho));
+      exportgraphics(gcf, strcat("figures/total_time_dist/", ...
+          fileName, ".png"), Resolution=300)
+    end
+  
+    %------semi lograthmic f_T(t)------
+    figure(2);clf;
+    semilogy(bins, TT_PDF, "-b", bins, TT_EPDF, "or", LineWidth=1.5)
+    xlabel('total time, T'); 
+    ylabel('PDF $f_T(t)$', Interpreter="latex");
+    h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
+    num2str(lambda/(c*mue))], 'Theoretical');
+    set(h, 'FontSize', 12);
+    grid on;
+    if save 
+      fileName = strcat("semilogy_plot_no_customers_", ...
+          num2str(numCustomers), "_rho_", num2str(rho));
+      exportgraphics(gcf, strcat("figures/total_time_dist/", ...
+          fileName, ".png"), Resolution=300)
+    end 
+  
+    % plot the distribution of waitTime
+    WWT = nonzeros(WT)';
+    MinTime = 0; MaxTime = max(WWT); 
+    NoOfBins = 50; BinWidth = (MaxTime-MinTime)/NoOfBins;
+    bins = MinTime+BinWidth/2:BinWidth:MaxTime-BinWidth/2;
+    freq = hist(WWT, bins);
+    WT_EPDF = probWait*freq./sum(freq)./BinWidth;
+    WT_PDF = c*mue*pc*exp(-bins*c*mue*pc/pWaiting);
+    figure(3); clf;
+    bar(bins, WT_EPDF); 
+    grid on; hold on;
+    plot(bins, WT_PDF, '--or', 'LineWidth', 2);
+    hold off;
+    xlabel('wait time, T'); ylabel('PDF f_W(t)');
+    set(gca,'FontSize', 14);
+    h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
+    num2str(lambda/(c*mue))], 'Theoretical');
+    set(h, 'FontSize', 12);
+    if save
+      fileName = strcat("bar_plot_no_customers_", ...
+          num2str(numCustomers), "_rho_", num2str(rho));
+      exportgraphics(gcf, strcat("figures/waiting_time_dist/", ...
+          fileName, ".png"), Resolution=300)
+    end
+  
+    %------semi logarithmic f_W(t)-----
+    figure(4);clf;
+    semilogy(bins, WT_EPDF, "ro", bins, WT_PDF, "-b", LineWidth=1.5)
+    xlabel('wait time, T');
+    ylabel('PDF $f_W(t)$', Interpreter="latex");
+    h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
+    num2str(lambda/(c*mue))], 'Theoretical');
+    set(h, 'FontSize', 12);
+    grid on;
+    if save 
+      fileName = strcat("semilogy_plot_no_customers_", ...
+          num2str(numCustomers), "_rho_", num2str(rho));
+      exportgraphics(gcf, strcat("figures/waiting_time_dist/", ...
+          fileName, ".png"), Resolution=300)
+    end
+  
+    %---------PMF of N-------
+    fig_xlabel = "No of customers, k";
+    fig_ylabel = "Prob[N(t) = k]";
+  
+    %--------semi logarithmic-----
+    figure(5); clf;
+    semilogy(0:1:N_max, simPMF, "ro", ...
+      0:1:N_max, theo_PMF, "-b", LineWidth=1.5)
+    xlabel(fig_xlabel)
+    ylabel(fig_ylabel)
+    h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
+    num2str(lambda/(c*mue))], 'Theoretical');
+    set(h, 'FontSize', 12);
+    grid on;
+    if save
+      fileName = strcat("bar_plot_no_customers_", ...
+          num2str(numCustomers), "_rho_", num2str(rho));
+      exportgraphics(gcf, strcat("figures/N_PMF/", ...
+          fileName, ".png"), Resolution=300)
+    end
+  
+  
+    %-------bar plot------
+    figure(6); clf;
+    bar(0:1:N_max, simPMF)
+    hold on;
+    plot(0:1:N_max, theo_PMF, "--ro",LineWidth=1.5)
+    hold off;
+    xlabel(fig_xlabel)
+    ylabel(fig_ylabel)
+    h = legend(['No of customers = ', num2str(numCustomers) ', \rho = ', ...
+    num2str(lambda/(c*mue))], 'Theoretical');
+    set(h, 'FontSize', 12);
+    grid on;
+    if save
+      fileName = strcat("semilogy_plot_no_customers_", ...
+          num2str(numCustomers), "_rho_", num2str(rho));
+      exportgraphics(gcf, strcat("figures/N_PMF/", ...
+          fileName, ".png"), Resolution=300)
+    end
+  end
+  %---------------End od the function--------
+  \end{lstlisting}
+  
+  \begin{lstlisting}[style=Matlab-editor, basicstyle=\ttfamily\footnotesize]
+  %----script to simulate and obtaine the distributions-------
+  clc;clearvars;
+  numCustomers = 100000;
+  lambda = 16;
+  mue = 10;
+  c = 2;
+  N_max = 100;
+  rho = lambda / (c * mue);
+  n_trials = 1;
+  sim_E_W = 0;
+  sim_E_T = 0;
+  sim_E_N = 0;
+  sim_E_Nq = 0;
+  sim_rho = 0;
+  
+  for i = 1:n_trials 
+  % Initialize lists
+  AT = cumsum(exprnd((1/lambda)*ones(1,numCustomers)));
+  ST = exprnd((1/mue)*ones(1,numCustomers));
+  
+  
+  %---------E[T], E[W]--------
+  [DT, startList, serviceTime] = simulation_loop(AT, ST, c);
+  WT = startList - AT;
+  TT = WT + ST;
+  sim_E_W = sim_E_W + mean(WT);
+  sim_E_T = sim_E_T + mean(TT);
+  probWait = sum( WT > 0) / length(WT);
+  
+  %-------E[N], E[Nq]-------
+  [areaN, areaNq, simPMF] = PMF_and_track_N(AT, DT, c, N_max);
+  maxDT = max(DT);
+  sim_E_N = + sim_E_N + areaN / maxDT;
+  sim_E_Nq = sim_E_Nq + areaNq / maxDT;
+  sim_rho =sim_rho + mean(serviceTime / maxDT);
+  
+  
+  end 
+  sim_E_W = sim_E_W / n_trials;
+  sim_E_T = sim_E_T / n_trials;
+  sim_E_N = sim_E_N / n_trials;
+  sim_E_Nq = sim_E_Nq / n_trials;
+  sim_rho = sim_rho / n_trials;
+  
+  %-------theoretical results------
+  [theo_PMF, theo_E_N, theo_E_Nq, theo_E_T, theo_E_W, pWaiting, pc, p0] = ...
+      MMc_theoretical_results(lambda, mue, c, N_max);
+  
+  disp("----------Simulation Resutls-------")
+  fprintf("E[N] = %f \n", sim_E_N);
+  fprintf("E[Nq] = %f \n", sim_E_Nq);
+  fprintf("E[T] = %f \n", sim_E_T);
+  fprintf("E[W] = %f \n", sim_E_W);
+  fprintf("Probability to Wait = %f \n", probWait);
+  
+  disp("----------Theoretical Resutls-------")
+  fprintf("E[N] = %f \n", theo_E_N);
+  fprintf("E[Nq] = %f \n", theo_E_Nq);
+  fprintf("E[T] = %f \n", theo_E_T);
+  fprintf("E[W] = %f \n", theo_E_W);
+  fprintf("Probability to Wait = %f \n", pWaiting);
+  
+  Plots(lambda, mue, c, rho, numCustomers, TT, WT, theo_E_T, ...
+      theo_E_W, pc, pWaiting, probWait, N_max, theo_E_N, ...
+      theo_PMF, simPMF);
+  %--------End of the script------
+  \end{lstlisting}
+  
+  \begin{lstlisting}[style=Matlab-editor, basicstyle=\ttfamily\footnotesize]
+    %script to simulate and obtain E[T], E[W], E[N], E[Nq] vs traffic intensity
+    clc;clearvars;
+    LineWidth = 2; MarkerSize = 8; FontSize1 = 14; FontSize2 = 12;
+    numCustomers = 100000;
+    rho = 0.05:0.05:0.99;
+    mue = 10;
+    lambda = rho * mue;
+    c = 2;
+    N_max = 100;
+    
+    for i=1:length(rho)
+        sim_E_W(i) = 0;
+        sim_E_T(i) = 0;
+        sim_E_N(i) = 0;
+        sim_E_Nq(i) = 0;
+    
+        % Initialize lists
+        AT = cumsum(exprnd((1/lambda(i))*ones(1,numCustomers)));
+        ST = exprnd((1/mue)*ones(1,numCustomers));
+      
+        %---------E[T], E[W]--------
+        [DT, startList, serviceTime] = simulation_loop(AT, ST, c);
+        WT = startList - AT;
+        TT = WT + ST;
+        sim_E_W(i) = sim_E_W(i) + mean(WT);
+        sim_E_T(i) = sim_E_T(i) + mean(TT);
+        probWait(i) = sum( WT > 0) / length(WT);
+        
+        %-------E[N], E[Nq]-------
+        [areaN, areaNq, simPMF] = PMF_and_track_N(AT, DT, c, N_max);
+        maxDT = max(DT);
+        sim_E_N(i) = + sim_E_N(i) + areaN / maxDT;
+        sim_E_Nq(i) = sim_E_Nq(i) + areaNq / maxDT;
+        
+        %-------theoretical results------
+        [theo_PMF, theo_E_N(i), theo_E_Nq(i), theo_E_T(i), theo_E_W(i), pWaiting(i), pc, p0] = ...
+            MMc_theoretical_results(lambda(i), mue, c, N_max);
+    end
+    
+    figure(1); clf;
+    plot(rho,theo_E_T, '--', 'LineWidth', LineWidth); grid on; hold on;
+    plot(rho,sim_E_T, 'or', 'LineWidth', LineWidth);
+    xlabel('Traffic intensity Rho (Erlang)'); ylabel('E[T] (time)');
+    set(gca,'FontSize', FontSize2);
+    h = legend('theoritical ', 'simulation', 'Location','northwest');
+    set(h, 'FontSize', FontSize2);
+    exportgraphics(gcf, "figures/avgs_vs_traffic_intensity/E_T.png", ...
+        Resolution=300);
+    
+    figure(2); clf;
+    plot(rho,theo_E_W, '--', 'LineWidth', LineWidth); grid on; hold on;
+    plot(rho,sim_E_W, 'or', 'LineWidth', LineWidth);
+    xlabel('Traffic intensity Rho (Erlang)'); ylabel('E[W] (time)');
+    set(gca,'FontSize', FontSize2);
+    h = legend('theoritical ', 'simulation', 'Location','northwest');
+    set(h, 'FontSize', FontSize2);
+    exportgraphics(gcf, "figures/avgs_vs_traffic_intensity/E_W.png", ...
+        Resolution=300);
+    
+    figure(3); clf;
+    plot(rho,theo_E_N, '--', 'LineWidth', LineWidth); grid on; hold on;
+    plot(rho,sim_E_N, 'or', 'LineWidth', LineWidth);
+    xlabel('Traffic intensity Rho (Erlang)'); ylabel('E[N] (Customer)');
+    set(gca,'FontSize', FontSize2);
+    h = legend('theoritical ', 'simulation', 'Location','northwest');
+    set(h, 'FontSize', FontSize2);
+    exportgraphics(gcf, "figures/avgs_vs_traffic_intensity/E_N.png", ...
+        Resolution=300);
+    
+    figure(4); clf;
+    plot(rho,theo_E_Nq, '--', 'LineWidth', LineWidth); grid on; hold on;
+    plot(rho,sim_E_Nq, 'or', 'LineWidth', LineWidth);
+    xlabel('Traffic intensity Rho (Erlang)'); ylabel('E[Nq] (Customer)');
+    set(gca,'FontSize', FontSize2);
+    h = legend('theoritical ', 'simulation', 'Location','northwest');
+    set(h, 'FontSize', FontSize2);
+    exportgraphics(gcf, "figures/avgs_vs_traffic_intensity/E_Nq.png", ...
+        Resolution=300);
+    %--------End of the script------
+  \end{lstlisting}
+  
+  \begin{lstlisting}[style=Matlab-editor, basicstyle=\ttfamily\footnotesize]
+  %script for simulating and plotting Prob[W > 0] vs c
+  clc;clearvars;
+  saveFigure = true;
+  numCustomers = 1000000;
+  max_c = 15;
+  rho = 0.90; c = 1: 1: max_c;
+  a = zeros(1, length(c));
+  simPWaiting = zeros(1, length(c));
+  theoPwaiting = zeros(1, length(c));
+  for i = 1:max_c
+      a(i) = rho * c(i);
+      lambda = a(i); mu = 1;
+      IAT = exprnd((1/lambda) * ones(1, numCustomers));
+      AT = cumsum(IAT);
+      ST = exprnd((1/mu) * ones(1, numCustomers));
+      [DT, startList, serviceTime] = simulation_loop(AT, ST, c(i));
+      WT = startList - AT;
+      simPWaiting(i) = sum( WT > 0) / numCustomers;
+      [~, ~, ~, ~, ~, theoPwaiting(i), ~,~] = MMc_theoretical_results(lambda, mu, c(i), c(i)+10);
+  end 
+  
+  figure(1)
+  plot(c, theoPwaiting, "-b", LineWidth=1.5)
+  hold on;
+  plot(c, simPWaiting, "or", LineWidth=1.5)
+  hold off;
+  xlim([0 max_c+1])
+  ylim([min(theoPwaiting)-0.05 max(theoPwaiting)+0.05])
+  xlabel("No of servers")
+  ylabel("Prob[W > 0]")
+  legend("Theoretical", "Simulation")
+  grid on;
+  fig_title = strcat("no_customers_", num2str(numCustomers), ...
+      "_max_c_", num2str(max_c), ".png");
+  if saveFigure
+      exportgraphics(gcf, strcat("figures/pWaiting_vs_c/", fig_title), Resolution=300)
+  end
+  %--------End of the script------
+  \end{lstlisting}

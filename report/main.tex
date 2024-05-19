@@ -6,6 +6,7 @@
 \usepackage{float}
 \usepackage{amsmath}
 \usepackage{subfig}
+\usepackage{xcolor}
 \usepackage[numbered]{matlab-prettifier}
 
 \begin{document}
@@ -102,7 +103,145 @@ The PDF of the total time is
   f_T(t) = \frac{1}{E[T]} e^{- t/ E[T] }, \quad t \ge 0 
 \end{equation}
 
+\newpage
 \section{Simulation Details}
+In this section, we will describe the process of simulating M/M/c,
+which involves mainly two parts. The first, we call it the main
+simulation loop where we compute the departure time, waiting time, 
+and start of service time for each customer. The second part is developed 
+to track the number of customers in the system and the queue, and utilizes this 
+information to compute average number of customers in the system and the queue 
+and the empirical Probability Mass Function for the number of customers in the 
+system.
+
+The input to the system will be the inter-arrival and the service times for a specific 
+number of customers. The inter-arrival and the service times are sampled from exponential
+distributions with averages $1/\lambda$ and $1/\mu$, respectively.
+
+\subsection{Main simulation loop}
+The steps for computing the departure, waiting, and start of service times
+are the following (see Figure \ref{main_simualtion_loop_diagram}):
+\begin{itemize}
+  \item Find the server with the earliest available time.
+  \item Assign the corresponding minimum index to the earliest available time.
+  \item Compute the start time:
+  \begin{itemize}
+    \item If the arrival time $>$ the earliest available time, 
+    it means that the server was idle for some time and 
+    the start time will be the arrival time.
+    \item If the earliest available time $>$ the arrival time it means the customer 
+    needs to wait and the start time will be the earliest available time.
+  \end{itemize}
+  \item Compute the departure time
+  \begin{itemize}
+    \item The Departure time will be the start time + service time.
+  \end{itemize}
+  \item Update the earliest available time of the server.
+  \item  The service total time for each server is updated 
+  by adding the service time of the customer.
+\end{itemize}
+
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=400px]{images/main_simulation_loop.png}
+  \caption{Main simulation loop diagram}
+  \label{main_simualtion_loop_diagram}
+\end{figure}
+
+The MATLAB code for the main lines of the main simulation loop
+are the following:
+\begin{lstlisting}[style=Matlab-editor, basicstyle=\ttfamily\footnotesize]
+%------simulation main loop-------
+for i = 1:numCustomers
+  % Find the earliest available server
+  [~, idx] = min(serverList);
+  earliestAvailableTime = serverList(idx);
+  serverID(i) = idx;
+  
+  % Calculate the start time for the customer
+  startTime = max(AT(i), earliestAvailableTime);
+  startList(i) = startTime;
+  
+  % Calculate the departure time
+  departureTime = startTime + ST(i);
+  DT(i) = departureTime;
+  
+  % Update the server list
+  serverList(idx) = departureTime;
+  serviceTime(idx) = serviceTime(idx) + ST(i); 
+end
+\end{lstlisting}
+
+\subsection{Track number of customers $N(t)$}
+To compute the average number of customers and the PMF of $N(t)$,
+we need to keep track of the number of customers at each time interval.
+We determine the interval by using two variable; the first is 
+\texttt{prevEventTime}, which stores the time of the last event and
+the second is \texttt{clock}, which points to the current event.
+The area under the curve of $N(t)$ is updated by adding the area 
+after each arrival or departure event. The updated area is
+\texttt{area = area + N * (clock - prevEventTime)}. The procedure for
+computing the area under the curve of $N_q(t)$ is similar. To the PMF 
+of $N(t)$, we need to compute the total time spent at each state $N$ and at the end of loop, 
+the PMF is computed by dividing the total time spent in state $N$ by the total 
+simulation time, which is the last departure time or \texttt{clock}. 
+
+{\color{red} \textbf{Note:} The departure times must be sorted from smallest to largest
+before starting the tracking process}
+
+\begin{figure}[H]
+  \vspace{2em}
+  \centering 
+  \includegraphics[width=250px]{images/track_N.png}
+  \caption{The process of tracking the number of customers and computing $E[N]$}
+\end{figure}
+
+The MATLAB code for the main lines of tracking $N(t)$ are the following 
+\begin{lstlisting}[style=Matlab-editor, basicstyle=\ttfamily\footnotesize]
+  function [areaN, areaNq, simPMF] = PMF_and_track_N(AT, DT, c, N_max)
+    N = 0; simPMF = zeros(1, N_max+1);
+    areaN = 0; areaNq = 0;
+    preEventTime = 0; clock = 0;
+    i = 1; j = 1;
+    sortedDT = sort(DT);
+    while clock < max(AT)
+        if AT(i) < sortedDT(j)
+            clock = AT(i);
+            timeInterval = clock - preEventTime;
+            simPMF(min(N, N_max)+1) = simPMF(min(N, N_max)+1) + timeInterval;
+            areaN = areaN + timeInterval * N;
+            areaNq = areaNq + timeInterval * max(0, N - c);
+            N = N + 1;
+            preEventTime = clock;
+            i = i + 1;
+        else
+            clock = sortedDT(j);
+            timeInterval = clock - preEventTime;
+            simPMF(min(N, N_max)+1) = simPMF(min(N, N_max)+1) + timeInterval;
+            areaN = areaN + timeInterval * N;
+            areaNq = areaNq + timeInterval * max(0, N - c);
+            N = N - 1;
+            preEventTime = clock;
+            j = j + 1;
+        end
+    end
+
+    for j = j:1:length(sortedDT)
+        clock = sortedDT(j);
+        timeInterval = clock - preEventTime;
+        simPMF(min(N, N_max)+1) = simPMF(min(N, N_max)+1) + timeInterval;
+        areaN = areaN + timeInterval * N;
+        areaNq = areaNq + timeInterval * max(0, N - c);
+        N = N - 1;
+        preEventTime = clock;
+    end 
+    simPMF = simPMF/clock;
+end
+\end{lstlisting}
+
+
+
 
 \newpage
 \section{Results and Discussion}
@@ -133,7 +272,7 @@ the average number of customers in the system $E[N]$, and the average
 number of customers in the buffer $E[N_q]$. All quantities increase as
 the traffic intensity increases, which is expected since the increase 
 of the traffic intensity implies that the arrival rate to the system is 
-getting relatively larger to the overall service rate of the system. This means 
+getting relatively close to the overall service rate of the system. This means 
 that the system is becoming more saturated and hence the averages for 
 the total time, the waiting time, and the total number of customers
 in the system and in the buffer increase. Furthermore, Figure \ref{avg_vs_rho} 
@@ -181,12 +320,12 @@ shows that the simulation results agree with the theoretical ones.
 Figure \ref{PDF_TT_low_med} shows the probability density function (PDF) 
 for the total time spent in the system for a low traffic intensity, $\rho = 0.25$
 and a medium traffic intensity, $\rho=0.5$. The distribution is exponential as expected
-from the theoretical formula. Moreover, the empirical and the theoretical distribution
+from the theoretical formula. Moreover, the empirical and the theoretical distributions
 are in an excellent agreement.
 
 Figure \ref{PDF_TT_high} shows the PDF for the total time for high traffic intensities, 
 $\rho=0.8$ and $\rho=0.95$. They agree with the theoretical ones, but not as well as 
-in the case low and medium traffic intensities. In an attempt to resolve this issue,
+in the case of low and medium traffic intensities. In an attempt to resolve this issue,
 we increased the number of customers to $1000000$ as indicated in Figure \ref{PDF_TT_high_more_cus}.
 This resulted in a better agreement with the theoretical results.
 
@@ -251,9 +390,9 @@ This resulted in a better agreement with the theoretical results.
 Figure \ref{PDF_W_low_med} shows the PDF of the waiting time for low traffic intensity, $\rho=0.25$
 and a medium traffic intensity, $\rho=0.5$. They are exponentially distributed, and they match with
 theoretical distributions. Figure \ref{PDF_W_high} indicates the distribution of the waiting time
-for high intensities $rho =0.8$ and $\rho=0.95$. The plot for $\rho=0.8$ is in relatively excellent 
-agreement with the theoretical one, but the plot $\rho =0.95$ is slightly far from the theoretical 
-PDF. We have increased the number of customers for the high intensity case to $1000000$ customers
+for high intensities $\rho =0.8$ and $\rho=0.95$. The plot for $\rho=0.8$ is in relatively excellent 
+agreement with the theoretical one, but the plot for $\rho =0.95$ is slightly far from the theoretical 
+PDF. We have increased the number of customers for the high intensity cases to $1000000$ customers
 and the results have improved as shown in Figure \ref{PDF_W_high_more_cust}.
 
 \begin{figure}[H]
@@ -322,10 +461,10 @@ almost zero (negligible). The theoretical and the empirical PMF are in an excell
 with one another. 
 
 Figure \ref{PMF_N_high} show the PMF of $N(t)$ for high intensities, and we notice that the 
-probability of having more customers in the system has increased larger from the case of low 
-and medium intensities. For $\rho=0.8$, the empirical distributed agrees well with the theoretical
-one, but the one for $\rho=0.95$ deviates from the theoretical distributed, especially for the high 
-number of customers. To improve the results, we have increased the number of customers to 1000000.
+probability of having more customers has increased dramatically from the case of low 
+and medium intensities. For $\rho=0.8$, the empirical distribution agrees well with the theoretical
+one, but the one for $\rho=0.95$ deviates from the theoretical distribution, especially for higher 
+states. To improve the results, we have increased the number of customers to 1000000.
 The results for the increment is displayed in Figure \ref{PMF_N_high_more_cust}.
 
 \begin{figure}[H]
@@ -357,44 +496,26 @@ The results for the increment is displayed in Figure \ref{PMF_N_high_more_cust}.
 
 Figure \ref{W_vs_c} shows the probability having to wait as function of the number of servers 
 in the system for a fixed traffic intensity. The plot indicates that probability of having to 
-decrease as the number of the servers increase, which is intuitive since more servers means 
-less waiting time and hence the probability of having to wait decreases. Furthermore, the 
+wait decreases as the number of the servers increase, which is intuitive since more servers means 
+more total service rate and hence less waiting time and thus the probability of having to wait decreases. Furthermore, the 
 empirical curve agrees with theoretical one.
 
 \section{Conclusion}
+We have simulated M/M/c queueing system with an infinite buffer, and we 
+have obtained the PDFs for the total time and the waiting time and the PMF 
+for the number of customers in the system. Furthermore, the averages of the 
+total time spent in the system, the waiting time in the queue, the number 
+of customers in the system, and the number of customers in the queue were 
+acquired through simulation. Additionally, the probability of having to wait 
+for different number of servers were studied, and we observed that the probability
+of waiting decreases as the number of servers increases as expected.
+The simulation output shows an excellent agreement
+with the theoretical formulas, which indicates that the used code is able to 
+simulate the system properly. 
 
 
 \newpage
 \section*{Appendix}
-\footnotesize
-\begin{lstlisting}[style=Matlab-editor, basicstyle=\ttfamily\footnotesize]
-  function [DT, startList, serviceTime] = simulation_loop(AT, ST, c)
-  numCustomers = length(AT);
-  startList = zeros(1, numCustomers);
-  DT = zeros(1, numCustomers);
-  serverList = zeros(1, c); % Initialize server list with c free servers
-  serverID = zeros(1, numCustomers);
-  serviceTime = zeros(1, c);
-  % Run simulation
-  for i = 1:numCustomers
-      % Find the earliest available server
-      [~, idx] = min(serverList);
-      earliestAvailableTime = serverList(idx);
-      serverID(i) = idx;
-      
-      % Calculate the start time for the customer
-      startTime = max(AT(i), earliestAvailableTime);
-      startList(i) = startTime;
-      
-      % Calculate the departure time
-      departureTime = startTime + ST(i);
-      DT(i) = departureTime;
-      
-      % Update the server list
-      serverList(idx) = departureTime;
-      serviceTime(idx) = serviceTime(idx) + ST(i); 
-  end
-end
-\end{lstlisting}
+\input{code.tex}
 
 \end{document}
