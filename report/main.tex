@@ -5,12 +5,15 @@
 \usepackage{parskip}
 \usepackage{float}
 \usepackage{amsmath}
+\usepackage{subfig}
+\usepackage[numbered]{matlab-prettifier}
 
 \begin{document}
+
 \include{cover-page}
 \onehalfspacing
 
-\section*{Objective}
+\section{Objective}
 To simulate the multiple servers queueing system with an infinite buffer, M/M/c, 
 and verify that the simulation results match with the theoretical ones. 
 The average total time, average waiting time, average number of customers in the system, 
@@ -24,7 +27,7 @@ study the effect of increasing the number of servers on the probability of waiti
 traffic intensity. All the results obtained through simulation will be compared against
 the theoretical ones.
 
-\section*{Theoretical Background}
+\section{Theoretical Background}
 The state diagram for M/M/c is shown in Figure \ref{state_diagram_MMc}. The 
 number of servers is denoted by $c$, the arrival rate is $\lambda$, and the 
 service rate when the system at some state $s$ is $min(s\mu, c\mu)$.
@@ -99,8 +102,299 @@ The PDF of the total time is
   f_T(t) = \frac{1}{E[T]} e^{- t/ E[T] }, \quad t \ge 0 
 \end{equation}
 
-\section*{Simulation Details}
+\section{Simulation Details}
 
-\section*{Results and Discussion}
+\newpage
+\section{Results and Discussion}
+\subsection{$E[T], E[W], E[N]$, and  $E[N_q]$}
+\begin{figure}[H]
+  \centering
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/avgs_vs_traffic_intensity/E_T.png}
+  }  
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/avgs_vs_traffic_intensity/E_W.png}
+  } 
+  \hspace{0px}
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/avgs_vs_traffic_intensity/E_N.png}
+  } 
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/avgs_vs_traffic_intensity/E_Nq.png}
+  } 
+  \caption{$E[T], E[W], E[N], \text{and}, E[N_q]$ 
+  \\ as function of the traffic intensity (for $c=2$)}
+  \label{avg_vs_rho}
+\end{figure}
+
+Figure \ref{avg_vs_rho} shows plots for the average total time spent 
+in the system $E[T]$, the average waiting time in  the buffer $E[W]$,
+the average number of customers in the system $E[N]$, and the average 
+number of customers in the buffer $E[N_q]$. All quantities increase as
+the traffic intensity increases, which is expected since the increase 
+of the traffic intensity implies that the arrival rate to the system is 
+getting relatively larger to the overall service rate of the system. This means 
+that the system is becoming more saturated and hence the averages for 
+the total time, the waiting time, and the total number of customers
+in the system and in the buffer increase. Furthermore, Figure \ref{avg_vs_rho} 
+shows that the simulation results agree with the theoretical ones.
+
+\subsection{PDF of the total time}
+\begin{figure}[H]
+  \centering
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/bars_plot_no_customers_100000_rho_0.25.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/semilogy_plot_no_customers_100000_rho_0.25.png}
+  }
+  \hspace{0px}
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/bars_plot_no_customers_100000_rho_0.5.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/semilogy_plot_no_customers_100000_rho_0.5.png}
+  }
+  \caption{PDF of the total time in the system for low and medium traffic intensity}
+  \label{PDF_TT_low_med}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/bars_plot_no_customers_100000_rho_0.8.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/semilogy_plot_no_customers_100000_rho_0.8.png}
+  }
+  \hspace{0px}
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/bars_plot_no_customers_100000_rho_0.95.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/semilogy_plot_no_customers_100000_rho_0.95.png}
+  }
+  \caption{PDF of the total time in the system for high traffic intensity}
+  \label{PDF_TT_high}
+\end{figure}
+
+Figure \ref{PDF_TT_low_med} shows the probability density function (PDF) 
+for the total time spent in the system for a low traffic intensity, $\rho = 0.25$
+and a medium traffic intensity, $\rho=0.5$. The distribution is exponential as expected
+from the theoretical formula. Moreover, the empirical and the theoretical distribution
+are in an excellent agreement.
+
+Figure \ref{PDF_TT_high} shows the PDF for the total time for high traffic intensities, 
+$\rho=0.8$ and $\rho=0.95$. They agree with the theoretical ones, but not as well as 
+in the case low and medium traffic intensities. In an attempt to resolve this issue,
+we increased the number of customers to $1000000$ as indicated in Figure \ref{PDF_TT_high_more_cus}.
+This resulted in a better agreement with the theoretical results.
+
+\begin{figure}[H]
+  \centering
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/bars_plot_no_customers_1000000_rho_0.8.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/semilogy_plot_no_customers_1000000_rho_0.8.png}
+  }
+  \hspace{0px}
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/bars_plot_no_customers_1000000_rho_0.95.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/total_time_dist/semilogy_plot_no_customers_1000000_rho_0.95.png}
+  }
+  \caption{PDF of the total time in the system for high $\rho$ and $1000000$ customers}  
+  \label{PDF_TT_high_more_cus}
+\end{figure}
+
+\subsection{PDF of the waiting time}
+\begin{figure}[H]
+  \centering
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/bar_plot_no_customers_100000_rho_0.25.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/semilogy_plot_no_customers_100000_rho_0.25.png}
+  }
+  \hspace{0px}
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/bar_plot_no_customers_100000_rho_0.5.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/semilogy_plot_no_customers_100000_rho_0.5.png}
+  }
+  \caption{PDF of the waiting time in the system for low and medium $\rho$}  
+  \label{PDF_W_low_med}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/bar_plot_no_customers_100000_rho_0.8.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/semilogy_plot_no_customers_100000_rho_0.8.png}
+  }
+  \hspace{0px}
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/bar_plot_no_customers_100000_rho_0.95.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/semilogy_plot_no_customers_100000_rho_0.95.png}
+  }
+  \caption{PDF of the waiting time in the system for high $\rho$}  
+  \label{PDF_W_high}
+\end{figure}
+
+Figure \ref{PDF_W_low_med} shows the PDF of the waiting time for low traffic intensity, $\rho=0.25$
+and a medium traffic intensity, $\rho=0.5$. They are exponentially distributed, and they match with
+theoretical distributions. Figure \ref{PDF_W_high} indicates the distribution of the waiting time
+for high intensities $rho =0.8$ and $\rho=0.95$. The plot for $\rho=0.8$ is in relatively excellent 
+agreement with the theoretical one, but the plot $\rho =0.95$ is slightly far from the theoretical 
+PDF. We have increased the number of customers for the high intensity case to $1000000$ customers
+and the results have improved as shown in Figure \ref{PDF_W_high_more_cust}.
+
+\begin{figure}[H]
+  \centering
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/bar_plot_no_customers_1000000_rho_0.8.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/semilogy_plot_no_customers_1000000_rho_0.8.png}
+  }
+  \hspace{0px}
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/bar_plot_no_customers_1000000_rho_0.95.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/waiting_time_dist/semilogy_plot_no_customers_1000000_rho_0.95.png}
+  }
+  \caption{PDF of the waiting time in the system for high $\rho$}  
+  \label{PDF_W_high_more_cust}
+\end{figure}
+
+\subsection{PMF of $N(t)$}
+\begin{figure}[H]
+  \centering
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/semilogy_plot_no_customers_100000_rho_0.25.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/bar_plot_no_customers_100000_rho_0.25.png}
+  }
+  \hspace{0px}
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/semilogy_plot_no_customers_100000_rho_0.5.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/bar_plot_no_customers_100000_rho_0.5.png}
+  }
+  \caption{PMF of $N(t)$  for low and medium traffic intensities}  
+  \label{PMF_N_low_med}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/semilogy_plot_no_customers_100000_rho_0.8.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/bar_plot_no_customers_100000_rho_0.8.png}
+  }
+  \hspace{0px}
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/semilogy_plot_no_customers_100000_rho_0.95.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/bar_plot_no_customers_100000_rho_0.95.png}
+  }
+  \caption{PMF of $N(t)$  for high traffic intensity}  
+  \label{PMF_N_high}
+\end{figure}
+
+Figure \ref{PMF_N_low_med} shows the probability mass function of the number of
+customers in the system for low traffic intensity, $\rho = 0.25$ and medium traffic
+intensity, $\rho=0.5$. We noticed that the probability of having 10 customers and more in the 
+system for $\rho=0.25$ and the probability of having 15 customers or more in the system is 
+almost zero (negligible). The theoretical and the empirical PMF are in an excellent agreement 
+with one another. 
+
+Figure \ref{PMF_N_high} show the PMF of $N(t)$ for high intensities, and we notice that the 
+probability of having more customers in the system has increased larger from the case of low 
+and medium intensities. For $\rho=0.8$, the empirical distributed agrees well with the theoretical
+one, but the one for $\rho=0.95$ deviates from the theoretical distributed, especially for the high 
+number of customers. To improve the results, we have increased the number of customers to 1000000.
+The results for the increment is displayed in Figure \ref{PMF_N_high_more_cust}.
+
+\begin{figure}[H]
+  \centering
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/semilogy_plot_no_customers_1000000_rho_0.8.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/bar_plot_no_customers_1000000_rho_0.8.png}
+  }
+  \hspace{0px}
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/semilogy_plot_no_customers_1000000_rho_0.95.png}
+  }
+  \subfloat[]{
+    \includegraphics[width=200px]{../code/figures/N_PMF/bar_plot_no_customers_1000000_rho_0.95.png}
+  }
+  \caption{PMF of $N(t)$  for high traffic intensity and 1000000 customers}  
+  \label{PMF_N_high_more_cust}
+\end{figure}
+
+\subsection{Prob$[W > 0]$ vs $c$}
+\begin{figure}
+  \centering 
+  \includegraphics[width=250px]{../code/figures/pWaiting_vs_c/no_customers_1000000_max_c_15.png}
+  \caption{Prob$[W > 0]$ vs $c$ for $\rho=0.9$}
+  \label{W_vs_c}
+\end{figure}
+
+Figure \ref{W_vs_c} shows the probability having to wait as function of the number of servers 
+in the system for a fixed traffic intensity. The plot indicates that probability of having to 
+decrease as the number of the servers increase, which is intuitive since more servers means 
+less waiting time and hence the probability of having to wait decreases. Furthermore, the 
+empirical curve agrees with theoretical one.
+
+\section{Conclusion}
+
+
+\newpage
+\section*{Appendix}
+\footnotesize
+\begin{lstlisting}[style=Matlab-editor, basicstyle=\ttfamily\footnotesize]
+  function [DT, startList, serviceTime] = simulation_loop(AT, ST, c)
+  numCustomers = length(AT);
+  startList = zeros(1, numCustomers);
+  DT = zeros(1, numCustomers);
+  serverList = zeros(1, c); % Initialize server list with c free servers
+  serverID = zeros(1, numCustomers);
+  serviceTime = zeros(1, c);
+  % Run simulation
+  for i = 1:numCustomers
+      % Find the earliest available server
+      [~, idx] = min(serverList);
+      earliestAvailableTime = serverList(idx);
+      serverID(i) = idx;
+      
+      % Calculate the start time for the customer
+      startTime = max(AT(i), earliestAvailableTime);
+      startList(i) = startTime;
+      
+      % Calculate the departure time
+      departureTime = startTime + ST(i);
+      DT(i) = departureTime;
+      
+      % Update the server list
+      serverList(idx) = departureTime;
+      serviceTime(idx) = serviceTime(idx) + ST(i); 
+  end
+end
+\end{lstlisting}
 
 \end{document}
